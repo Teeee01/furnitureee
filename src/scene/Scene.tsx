@@ -1,8 +1,8 @@
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Suspense, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import type { Category, CouchStyle, SizeOption } from "../data/furniture";
-import { buildTarget, Director, hexToRgb } from "./anim/director";
+import { buildTarget, Director, EMPTY_CAST, emptyTarget, hexToRgb } from "./anim/director";
 import { DirectorContext } from "./anim/useDirector";
 import { Room } from "./Room";
 import { themedTabletop } from "./sceneTheme";
@@ -17,6 +17,18 @@ export interface SceneProps {
   fabric: string;
   reduced: boolean;
   theme: ThemeName;
+  /** configurator: follows the selection. empty: the platform and the plant
+   *  only (empty cart). showcase: one fixed setup (order confirmation). */
+  variant?: "configurator" | "empty" | "showcase";
+  /** Showcase: a soft ring spreads across the platform once it has settled. */
+  pulse?: boolean;
+  /** Receives the scene's snapshot function once the canvas exists. */
+  onReady?: (api: SceneApi) => void;
+}
+
+export interface SceneApi {
+  /** A square snapshot of the current frame (data URL), or null. */
+  capture(): string | null;
 }
 
 /**
@@ -26,16 +38,17 @@ export interface SceneProps {
  * into springs.
  */
 export function Scene(props: SceneProps) {
-  const { category, slot, size, style, tabletop, fabric, reduced, theme } = props;
+  const { category, slot, size, style, tabletop, fabric, reduced, theme, variant = "configurator", pulse, onReady } = props;
   const wrap = useRef<HTMLDivElement>(null);
   const [director] = useState(
     () =>
       new Director(
-        buildTarget(category, size),
+        variant === "empty" ? emptyTarget() : buildTarget(category, size),
         style,
         hexToRgb(themedTabletop(tabletop, theme)),
         hexToRgb(fabric),
         theme,
+        variant === "empty" ? EMPTY_CAST : undefined,
       ),
   );
 
@@ -48,10 +61,11 @@ export function Scene(props: SceneProps) {
   const last = useRef({ category: category.id, slot });
   useEffect(() => {
     const prev = last.current;
+    if (variant !== "configurator") return;
     if (prev.category === category.id && prev.slot === slot) return;
     last.current = { category: category.id, slot };
     director.change(buildTarget(category, size), prev.category !== category.id ? "category" : "size");
-  }, [director, category, slot, size]);
+  }, [director, category, slot, size, variant]);
 
   useEffect(() => director.setStyle(style), [director, style]);
 
@@ -96,12 +110,48 @@ export function Scene(props: SceneProps) {
           <Lights director={director} />
           <Suspense fallback={null}>
             <DirectorContext.Provider value={director}>
-              <Room director={director} name={size.name} idle={!reduced} />
+              <Room director={director} name={size.name} idle={!reduced} pulse={pulse} />
+              {onReady && <CaptureBridge onReady={onReady} />}
             </DirectorContext.Provider>
           </Suspense>
         </Canvas>
     </div>
   );
+}
+
+/** Square snapshot of the canvas, drawn right after a fresh render (no
+ *  preserveDrawingBuffer needed), downscaled to a small WebP. */
+function CaptureBridge({ onReady }: { onReady: (api: SceneApi) => void }) {
+  const gl = useThree((s) => s.gl);
+  const scene = useThree((s) => s.scene);
+  const camera = useThree((s) => s.camera);
+  useEffect(() => {
+    onReady({
+      capture() {
+        try {
+          gl.render(scene, camera);
+          const src = gl.domElement;
+          const side = Math.min(src.width, src.height);
+          const out = document.createElement("canvas");
+          const size = 360;
+          out.width = out.height = size;
+          const ctx = out.getContext("2d");
+          if (!ctx || side === 0) return null;
+          ctx.drawImage(src, (src.width - side) / 2, (src.height - side) / 2, side, side, 0, 0, size, size);
+          const webp = out.toDataURL("image/webp", 0.82);
+          if (webp.startsWith("data:image/webp")) return webp;
+          // No WebP encoder (older Safari): a smaller PNG.
+          const small = document.createElement("canvas");
+          small.width = small.height = 200;
+          small.getContext("2d")?.drawImage(out, 0, 0, 200, 200);
+          return small.toDataURL("image/png");
+        } catch {
+          return null;
+        }
+      },
+    });
+  }, [gl, scene, camera, onReady]);
+  return null;
 }
 
 /** Lights and shadow strengths follow the theme springs (400 ms tween). */

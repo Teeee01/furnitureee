@@ -25,6 +25,9 @@ export interface UiTokens {
   /** Text on the accent. */
   onAccent: string;
   success: string;
+  /** Green / red text (inline messages): darker than the fills in light. */
+  successText: string;
+  danger: string;
   /** Inactive step dots. */
   dot: string;
   /** Active segmented button: border, fill, inner glow (dark only). */
@@ -81,6 +84,8 @@ export const THEMES: Record<ThemeName, Theme> = {
       accentHover: "#6173F7",
       onAccent: "#FFFFFF",
       success: "#3DD68C",
+      successText: "#3DD68C",
+      danger: "#FF6B6B",
       dot: "#3A3A40",
       activeBorder: "rgb(79 99 246 / 0.6)",
       activeFill: "#18181B",
@@ -123,6 +128,8 @@ export const THEMES: Record<ThemeName, Theme> = {
       accentHover: "#3F53E6",
       onAccent: "#FFFFFF",
       success: "#1FA971",
+      successText: "#147A51",
+      danger: "#C8363B",
       dot: "#D2CFC9",
       activeBorder: "rgb(79 99 246 / 0.5)",
       // White with a 6% indigo tint (a solid colour, so it can tween).

@@ -1,47 +1,32 @@
-import { MotionConfig, useReducedMotion } from "framer-motion";
-import { lazy, Suspense } from "react";
-import { CrossfadeText } from "./ui/CrossfadeText";
-import { useConfigurator } from "./state/useConfigurator";
+import { AnimatePresence, MotionConfig } from "framer-motion";
+import { Route, Routes, useLocation } from "react-router";
+import { FlyLayer } from "./cart/FlyLayer";
+import { CartPage } from "./pages/CartPage";
+import { CheckoutPage } from "./pages/CheckoutPage";
+import { ConfiguratorPage } from "./pages/ConfiguratorPage";
+import { OrderConfirmedPage } from "./pages/OrderConfirmedPage";
+import { ThemeContext } from "./state/themeContext";
 import { useTheme } from "./state/useTheme";
-import { Panel } from "./ui/Panel";
-
-// three.js loads in its own chunk so the panel paints first.
-const Scene = lazy(() => import("./scene/Scene").then((m) => ({ default: m.Scene })));
 
 export default function App() {
-  const c = useConfigurator();
-  const { theme, toggle } = useTheme();
-  const reduced = useReducedMotion() ?? false;
+  const theme = useTheme();
+  const location = useLocation();
   return (
-    <MotionConfig reducedMotion="user">
-    <div className="flex min-h-svh flex-col bg-bg text-fg desk:grid desk:h-svh desk:grid-cols-[38%_62%] desk:overflow-hidden">
-      <main className="px-6 py-8 sm:px-10 desk:h-svh desk:overflow-y-auto desk:px-[72px] desk:py-[72px]">
-        <Panel c={c} theme={theme} onToggleTheme={toggle} />
-      </main>
-
-      <section aria-label="Room preview" className="relative order-first h-[55vh] desk:order-none desk:h-svh">
-        <div className="absolute inset-0">
-          <Suspense fallback={null}>
-            <Scene
-              category={c.category}
-              slot={c.slot}
-              size={c.size}
-              style={c.style}
-              tabletop={c.tabletop}
-              fabric={c.fabric}
-              reduced={reduced}
-              theme={theme}
-            />
-          </Suspense>
+    <ThemeContext.Provider value={theme}>
+      <MotionConfig reducedMotion="user">
+        <div className="grid min-h-svh bg-bg text-fg">
+          <AnimatePresence initial={false}>
+            <Routes location={location} key={location.pathname}>
+              <Route path="/" element={<ConfiguratorPage />} />
+              <Route path="/cart" element={<CartPage />} />
+              <Route path="/checkout" element={<CheckoutPage />} />
+              <Route path="/order-confirmed" element={<OrderConfirmedPage />} />
+              <Route path="*" element={<ConfiguratorPage />} />
+            </Routes>
+          </AnimatePresence>
         </div>
-        <p className="pointer-events-none absolute inset-x-0 bottom-5 flex justify-center text-[12px] text-muted desk:bottom-8" aria-live="polite">
-          <CrossfadeText text={c.size.caption} />
-        </p>
-        <button type="button" className="btn-pill absolute bottom-3 right-4 h-10 px-4 text-[12px] desk:bottom-6 desk:right-8 desk:h-8 desk:px-3.5">
-          View cart
-        </button>
-      </section>
-    </div>
-    </MotionConfig>
+        <FlyLayer />
+      </MotionConfig>
+    </ThemeContext.Provider>
   );
 }

@@ -30,7 +30,7 @@ const TILT = 2;
  * props that persist across every setup. Items mount / unmount as the
  * director adds and retires them; all motion is read from springs per frame.
  */
-export function Room({ director, name, idle }: { director: Director; name: string; idle: boolean }) {
+export function Room({ director, name, idle, pulse }: { director: Director; name: string; idle: boolean; pulse?: boolean }) {
   const items = useItems();
   const busy = useBusy(director);
   const contact = useRef<THREE.Group>(null);
@@ -72,9 +72,10 @@ export function Room({ director, name, idle }: { director: Director; name: strin
         {items.map((item) => (
           <ItemView key={item.id} item={item} director={director} />
         ))}
-        <Person director={director} idle={idle} />
+        {director.cast.person && <Person director={director} idle={idle} />}
         <Plant director={director} inset={PLANT_INSET} idle={idle} />
-        <Sign director={director} text={name} />
+        {director.cast.sign && <Sign director={director} text={name} />}
+        {pulse && <Pulse director={director} />}
         <Warmup />
       </Tilt>
     </>
@@ -143,6 +144,45 @@ function ItemView({ item, director }: { item: Item; director: Director }) {
     case "rug":
       return <Rug item={item} theme={director.theme} />;
   }
+}
+
+/** One soft ring that spreads across the platform after the entrance
+ *  (order confirmation). */
+function Pulse({ director }: { director: Director }) {
+  const mesh = useRef<THREE.Mesh>(null);
+  const mat = useMemo(
+    () => new THREE.MeshBasicMaterial({ color: "#4F63F6", transparent: true, opacity: 0, depthWrite: false }),
+    [],
+  );
+  const geo = useMemo(() => {
+    const g = new THREE.RingGeometry(0.94, 1, 96);
+    g.rotateX(-Math.PI / 2);
+    return g;
+  }, []);
+  useEffect(
+    () => () => {
+      mat.dispose();
+      geo.dispose();
+    },
+    [mat, geo],
+  );
+  const progress = useMemo(() => new SpringValue(0), []);
+  const started = useRef(false);
+  useFrame(() => {
+    const m = mesh.current;
+    if (!m) return;
+    if (!started.current && performance.now() > director.introSettledAt) {
+      started.current = true;
+      director.busyUntil = performance.now() + 1800;
+      progress.start({ to: 1, config: { duration: director.reduced ? 1 : 1400, easing: (t) => 1 - Math.pow(1 - t, 3) } });
+    }
+    const p = progress.get();
+    const reach = Math.max(director.platform.length.get(), director.platform.width.get()) * 0.62;
+    m.scale.setScalar(0.25 + p * reach);
+    mat.opacity = p > 0 && p < 1 ? 0.5 * (1 - p) : 0;
+    m.visible = mat.opacity > 0.002;
+  });
+  return <mesh ref={mesh} geometry={geo} material={mat} position-y={0.008} renderOrder={2} />;
 }
 
 /** The whole set tilts up to 2° toward the mouse, eased by a soft spring. */

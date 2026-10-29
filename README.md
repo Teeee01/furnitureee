@@ -27,10 +27,27 @@ setting. The scene reads the same object through springs
 (`src/scene/sceneTheme.ts`): materials, lights and shadow strengths tween
 over 400 ms on a switch, independently of any furniture animation.
 
+## Pages
+
+| Route              | What                                                         |
+| ------------------ | ------------------------------------------------------------ |
+| `/`                | Configurator. "Add to cart" snapshots the 3D scene and flies it into the cart button. |
+| `/cart`            | Cart: quantities, remove / undo, assembly, promo `FORMA10`, order summary. |
+| `/checkout`        | Delivery → Payment → Review (`?step=…`, so the back button steps back). |
+| `/order-confirmed` | The last order (kept in localStorage).                        |
+
+The payment step is a **demo**: nothing is charged, and card details are only
+formatted and validated in memory — never saved or sent. The cart lives in
+localStorage (`forma-cart`), checkout progress in sessionStorage
+(`forma-checkout`, without card data). Price rules (free delivery threshold,
+delivery, express, assembly, promo codes) are in `src/state/pricing.ts`.
+
 ## Deploy (Vercel)
 
 Framework preset **Vite**, build command `npm run build`, output directory
 `dist`, install command `npm install` (default). Node ≥ 20.19.
+`vercel.json` rewrites every path to `index.html` so `/cart`, `/checkout` and
+`/order-confirmed` load directly.
 
 ## Where things live
 
@@ -40,6 +57,11 @@ src/data/furniture.ts      ALL product data: categories, sizes, names, prices,
                            captions, dimensions, table specs, seat positions,
                            couch modules, rug / lamp / laptop placement
 src/state/useConfigurator  selection (category, size slot, finish, style)
+src/state/cart.ts          cart store (localStorage), add / quantity / remove / undo
+src/state/pricing.ts       ALL price rules: delivery, express, assembly, promo codes
+src/pages/                 Configurator, Cart, Checkout, OrderConfirmed
+src/checkout/              checkout steps, validation, Nigerian states, demo card checks
+src/cart/                  flying snapshot, View cart button, thumbnails, summary lines
 src/ui/                    panel, radiogroups (arrow keys), swatches, logo
 src/scene/anim/config.ts   ALL motion numbers: springs, durations, phase times
 src/scene/anim/director.ts THE DIRECTOR: diffs layouts, runs the choreography

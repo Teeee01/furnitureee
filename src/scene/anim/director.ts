@@ -293,9 +293,29 @@ const SEAT_BOX: Record<SeatSpec["kind"], [number, number, number]> = {
   armchair: [0.85, 0.8, 0.84],
 };
 
+/** Which of the always-present props are on stage. */
+export interface Cast {
+  person: boolean;
+  sign: boolean;
+}
+export const FULL_CAST: Cast = { person: true, sign: true };
+/** The empty room (cart with nothing in it): the platform and the plant. */
+export const EMPTY_CAST: Cast = { person: false, sign: false };
+
+/** An empty platform: no furniture, no person, no sign — just the plant. */
+export function emptyTarget(length = 3, width = 3): Target {
+  const setup = {
+    platform: { length, width },
+    table: { length: 0, width: 0, radius: 0, thickness: 0, height: 0, base: "legs", family: "none", x: 0, z: 0, rotation: 0 },
+    seats: [],
+    person: { x: 0, z: 0, rotation: 0, seatHeight: 0.46, pose: "upright" },
+  } satisfies SizeOption["setup"];
+  return { categoryId: "empty", platform: setup.platform, frame: frameOf(setup, [], EMPTY_CAST), person: setup.person, entries: [] };
+}
+
 /** Screen-space extent of everything in a setup: platform, furniture (as
  *  boxes), the person, the plant and the sign. */
-function frameOf(setup: SizeOption["setup"], entries: Entry[]): Frame {
+function frameOf(setup: SizeOption["setup"], entries: Entry[], cast: Cast = FULL_CAST): Frame {
   const f: Frame = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
   const add = (x: number, y: number, z: number) => {
     const sx = isoX(x, y, z);
@@ -341,11 +361,11 @@ function frameOf(setup: SizeOption["setup"], entries: Entry[]): Frame {
     if (e.type === "lamp") box(e.x, e.z, 0.4, 0.4, 0, 0, 1.56);
   }
   const p = setup.person;
-  box(p.x, p.z, 0.45, 0.45, p.rotation, 0, p.seatHeight + 0.86);
+  if (cast.person) box(p.x, p.z, 0.45, 0.45, p.rotation, 0, p.seatHeight + 0.86);
   box(-L / 2 + PLANT_INSET, -W / 2 + PLANT_INSET, 0.4, 0.4, 0, 0, PLANT_TOP);
   const sc = signScale(L);
   const si = signInset(sc);
-  box(-L / 2 + si, W / 2 - si, SIGN_BOARD.width * sc, 0.06, 45, 0, (SIGN_BOARD.y + SIGN_BOARD.height / 2) * sc);
+  if (cast.sign) box(-L / 2 + si, W / 2 - si, SIGN_BOARD.width * sc, 0.06, 45, 0, (SIGN_BOARD.y + SIGN_BOARD.height / 2) * sc);
   return f;
 }
 
@@ -410,7 +430,20 @@ export class Director {
   private version = 0;
   private listeners = new Set<() => void>();
 
-  constructor(target: Target, style: CouchStyle, tabletop: number[], fabric: number[], theme: ThemeName) {
+  /** Person / sign on stage (the empty cart room has neither). */
+  cast: Cast;
+  /** When the first-load entrance has settled (ms, performance.now()). */
+  introSettledAt = Infinity;
+
+  constructor(
+    target: Target,
+    style: CouchStyle,
+    tabletop: number[],
+    fabric: number[],
+    theme: ThemeName,
+    cast: Cast = FULL_CAST,
+  ) {
+    this.cast = cast;
     this.style = style;
     this.theme = new SceneTheme(theme);
     const p = target.person;
@@ -477,14 +510,16 @@ export class Director {
         a.dy.set(0);
         a.spin.set(0);
       }
-      this.person.s.set(1);
+      if (this.cast.person) this.person.s.set(1);
       this.person.dy.set(0);
+      if (!this.cast.sign) this.props.sign.s.set(0);
       this.platform.s.set(1);
       this.platform.op.set(1);
     };
     if (this.reduced) {
       showAll();
       this.dipEl?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: TWEEN.reduced.duration, easing: "ease-out" });
+      this.introSettledAt = performance.now() + TWEEN.reduced.duration;
       return;
     }
     const isMain = (i: Item) => (i.type === "table" && !i.extra) || (i.type === "couch" && i.role === "main");
@@ -506,12 +541,15 @@ export class Director {
     seats.forEach((s, i) => t(seatsAt + i * step, () => enter(s)));
     // The person drops in with their seat (or just after the couch).
     const personAt = seats.length ? seatsAt + 60 : T.introMain + 120;
-    t(personAt, () => {
-      this.person.s.start({ to: 1, config: SPRING.enter });
-      this.person.dy.start({ to: 0, config: SPRING.enter });
-    });
+    if (this.cast.person) {
+      t(personAt, () => {
+        this.person.s.start({ to: 1, config: SPRING.enter });
+        this.person.dy.start({ to: 0, config: SPRING.enter });
+      });
+    }
     const propsAt = Math.max(personAt, seatsAt + seats.length * step) + T.extrasStagger;
-    const all = [...props, this.props.plant, this.props.sign] as (Item | Presence)[];
+    const all = [...props, this.props.plant, ...(this.cast.sign ? [this.props.sign] : [])] as (Item | Presence)[];
+    this.introSettledAt = performance.now() + propsAt + all.length * T.extrasStagger + 450;
     all.forEach((p, i) =>
       t(propsAt + i * T.extrasStagger, () => ("anim" in p ? enter(p) : this.enterPresence(p))),
     );

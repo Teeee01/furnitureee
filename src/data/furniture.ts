@@ -25,7 +25,8 @@
  *               The currency symbol is CURRENCY.
  *
  *  Captions     `caption` under the scene. Keep it in step with the table
- *               size (e.g. "Seats 6 · 180 × 95 cm").
+ *               size (e.g. "Seats 6 · 180 × 95 cm"); the cart shows the part
+ *               after "·" as the dimensions. `seats` = people it seats.
  *
  *  Dimensions   in metres, in `table({ … })`:
  *                 length / width   180 × 95 cm → length: 1.8, width: 0.95
@@ -155,8 +156,11 @@ export interface SizeOption {
   name: string;
   /** Price in naira. */
   price: number;
-  /** Caption under the scene. */
+  /** Caption under the scene. The part after "·" is shown as the
+   *  dimensions in the cart. */
   caption: string;
+  /** How many people the set seats (shown in the cart). */
+  seats: number;
   setup: Setup;
 }
 
@@ -406,6 +410,7 @@ export const CATEGORIES: Category[] = [
         name: "Ondo Bistro Table",
         price: 320000,
         caption: "Seats 2 · Ø 75 cm",
+        seats: 2,
         setup: {
           platform: { length: 2.7, width: 2.7 },
           table: table({ length: 0.75, width: 0.75, radius: 0.375 }),
@@ -419,6 +424,7 @@ export const CATEGORIES: Category[] = [
         name: "Ondo Round Table",
         price: 540000,
         caption: "Seats 4 · Ø 110 cm",
+        seats: 4,
         setup: {
           platform: { length: 3.1, width: 3.1 },
           table: table({ length: 1.1, width: 1.1, radius: 0.55 }),
@@ -432,6 +438,7 @@ export const CATEGORIES: Category[] = [
         name: "Ondo Dining Table",
         price: 850000,
         caption: "Seats 6 · 180 × 95 cm",
+        seats: 6,
         setup: {
           platform: { length: 4.1, width: 3.1 },
           table: table({ length: 1.8, width: 0.95, radius: 0.475 }),
@@ -445,6 +452,7 @@ export const CATEGORIES: Category[] = [
         name: "Ondo Banquet Table",
         price: 1450000,
         caption: "Seats 10 · 300 × 105 cm",
+        seats: 10,
         setup: {
           platform: { length: 5.5, width: 3.2 },
           table: table({ length: 3.0, width: 1.05, radius: 0.525 }),
@@ -468,6 +476,7 @@ export const CATEGORIES: Category[] = [
         name: "Ondo Solo Desk",
         price: 380000,
         caption: "1 person · 140 × 70 cm",
+        seats: 1,
         setup: {
           platform: { length: 2.7, width: 2.7 },
           table: table({ length: 1.4, width: 0.7, radius: 0.04, height: 0.74, base: "legs", family: "desk" }),
@@ -482,6 +491,7 @@ export const CATEGORIES: Category[] = [
         name: "Ondo Meeting Table",
         price: 620000,
         caption: "Seats 4 · Ø 120 cm",
+        seats: 4,
         setup: {
           platform: { length: 3.3, width: 3.3 },
           table: table({ length: 1.2, width: 1.2, radius: 0.6, height: 0.74 }),
@@ -495,6 +505,7 @@ export const CATEGORIES: Category[] = [
         name: "Ondo Boardroom Table",
         price: 1650000,
         caption: "Seats 10 · 300 × 120 cm",
+        seats: 10,
         setup: {
           platform: { length: 5.7, width: 3.5 },
           table: table({ length: 3.0, width: 1.2, radius: 0.6, height: 0.74 }),
@@ -508,6 +519,7 @@ export const CATEGORIES: Category[] = [
         name: "Ondo Executive Boardroom",
         price: 2400000,
         caption: "Seats 14 · 420 × 130 cm",
+        seats: 14,
         setup: {
           platform: { length: 6.9, width: 3.6 },
           table: table({ length: 4.2, width: 1.3, radius: 0.65, height: 0.74 }),
@@ -531,6 +543,7 @@ export const CATEGORIES: Category[] = [
         name: "Ondo Breakfast Bar",
         price: 290000,
         caption: "Seats 2 · 120 × 45 cm",
+        seats: 2,
         setup: {
           platform: { length: 2.6, width: 2.6 },
           table: table({ length: 1.2, width: 0.45, radius: 0.05, height: 1.02, base: "legs", family: "bar" }),
@@ -544,6 +557,7 @@ export const CATEGORIES: Category[] = [
         name: "Ondo Square Table",
         price: 450000,
         caption: "Seats 4 · 90 × 90 cm",
+        seats: 4,
         setup: {
           platform: { length: 2.9, width: 2.9 },
           table: table({ length: 0.9, width: 0.9, radius: 0.12, base: "legs", family: "kitchen" }),
@@ -557,6 +571,7 @@ export const CATEGORIES: Category[] = [
         name: "Ondo Farmhouse Table",
         price: 780000,
         caption: "Seats 6 · 190 × 90 cm",
+        seats: 6,
         setup: {
           platform: { length: 3.9, width: 3.1 },
           table: table({ length: 1.9, width: 0.9, radius: 0.04, thickness: 0.06, base: "legs", family: "kitchen" }),
@@ -570,6 +585,7 @@ export const CATEGORIES: Category[] = [
         name: "Ondo Kitchen Island",
         price: 1250000,
         caption: "Seats 8 · 260 × 100 cm",
+        seats: 8,
         setup: {
           platform: { length: 4.6, width: 3.3 },
           table: table({ length: 2.6, width: 1.0, radius: 0.06, thickness: 0.08, height: 0.95, base: "cabinet", family: "island" }),
@@ -593,6 +609,7 @@ export const CATEGORIES: Category[] = [
         name: "Ondo Lounge Chair",
         price: 420000,
         caption: "1-seater · 85 × 80 cm",
+        seats: 1,
         setup: {
           platform: { length: 2.6, width: 2.6 },
           table: table({ length: 0.46, width: 0.46, radius: 0.23, height: 0.52, thickness: 0.03, x: 0.48, z: -0.12, family: "side" }),
@@ -608,6 +625,7 @@ export const CATEGORIES: Category[] = [
         name: "Ondo Loveseat",
         price: 690000,
         caption: "2-seater · 160 × 88 cm",
+        seats: 2,
         setup: {
           platform: { length: 3.0, width: 3.0 },
           table: table({ length: 0.8, width: 0.5, radius: 0.12, height: 0.38, thickness: 0.035, base: "legs", z: 0.45, family: "coffee" }),
@@ -623,6 +641,7 @@ export const CATEGORIES: Category[] = [
         name: "Ondo Sofa Set",
         price: 1350000,
         caption: "3-seater · 210 × 90 cm",
+        seats: 5,
         setup: {
           platform: { length: 4.0, width: 3.5 },
           table: table({ length: 1.1, width: 0.6, radius: 0.06, height: 0.4, thickness: 0.04, base: "legs", z: 0.22, family: "coffee" }),
@@ -638,6 +657,7 @@ export const CATEGORIES: Category[] = [
         name: "Ondo Corner Sectional",
         price: 2100000,
         caption: "L-sectional · 280 × 200 cm",
+        seats: 6,
         setup: {
           platform: { length: 4.6, width: 3.8 },
           table: table({ length: 1.2, width: 0.75, radius: 0.08, height: 0.38, thickness: 0.045, base: "legs", x: -0.3, z: 0.3, family: "coffee" }),
@@ -661,4 +681,10 @@ export function getCategory(id: CategoryId): Category {
 
 export function formatPrice(price: number) {
   return `${CURRENCY}${price.toLocaleString("en-US")}`;
+}
+
+/** "Seats 6 · 180 × 95 cm" → "180 × 95 cm". */
+export function dimensionsOf(size: SizeOption) {
+  const parts = size.caption.split("·");
+  return (parts[parts.length - 1] ?? size.caption).trim();
 }

@@ -4,22 +4,22 @@ import { formatPrice } from "../data/furniture";
 
 /** The price counts up / down to a new value (500 ms number roll). A new
  *  value mid-roll continues from the number currently shown. */
-export function PriceRoll({ value, className }: { value: number; className?: string }) {
+export function PriceRoll({ value, className, duration = 0.5, prefix = "" }: { value: number; className?: string; duration?: number; prefix?: string }) {
   const mv = useMotionValue(value);
-  const shown = useTransform(mv, (v) => formatPrice(Math.round(v)));
+  const shown = useTransform(mv, (v) => prefix + formatPrice(Math.round(v)));
   const reduced = useReducedMotion();
   useEffect(() => {
     if (reduced) {
       mv.set(value);
       return;
     }
-    const controls = animate(mv, value, { duration: 0.5, ease: [0.25, 0.1, 0.25, 1] });
+    const controls = animate(mv, value, { duration, ease: [0.25, 0.1, 0.25, 1] });
     return () => controls.stop();
-  }, [mv, value, reduced]);
+  }, [mv, value, reduced, duration]);
   return (
     <span className={className}>
       <span className="sr-only" aria-live="polite">
-        {formatPrice(value)}
+        {prefix + formatPrice(value)}
       </span>
       <motion.span aria-hidden="true">{shown}</motion.span>
     </span>

@@ -14,7 +14,20 @@ const SUBTEXT = "Pick a size and watch the room change. You can change it anytim
 const HELPER = "Pick a size and watch the room change.";
 
 /** The configurator panel (left column on desktop, below the scene on mobile). */
-export function Panel({ c, theme, onToggleTheme }: { c: Configurator; theme: ThemeName; onToggleTheme: () => void }) {
+export function Panel({
+  c,
+  theme,
+  onToggleTheme,
+  onAdd,
+  added,
+}: {
+  c: Configurator;
+  theme: ThemeName;
+  onToggleTheme: () => void;
+  onAdd: () => void;
+  /** Shows "Added ✓" for a moment after adding. */
+  added: boolean;
+}) {
   const { category, size } = c;
   return (
     <div className="flex min-h-full flex-col">
@@ -114,8 +127,8 @@ export function Panel({ c, theme, onToggleTheme }: { c: Configurator; theme: The
             <button type="button" className="btn-secondary h-10 px-4 text-[13px]">
               Back
             </button>
-            <button type="button" className="btn-primary h-10 flex-1 text-[13px]">
-              Add to cart
+            <button type="button" onClick={onAdd} className="btn-primary h-10 flex-1 text-[13px]" aria-live="polite">
+              <CrossfadeText text={added ? "Added ✓" : "Add to cart"} className="justify-items-center" />
             </button>
           </div>
         </div>
