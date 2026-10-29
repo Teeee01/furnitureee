@@ -8,7 +8,7 @@ import type { Director } from "../anim/director";
 import { presenceOf } from "../anim/useDirector";
 import { SIGN_BOARD, signInset, signScale } from "../layout";
 import { TWEEN } from "../anim/config";
-import { DEG, useSlabGeometry } from "../geometry";
+import { DEG, useOwnMaterial, useSlabGeometry } from "../geometry";
 import { MAT } from "../materials";
 import { Rod } from "../furniture/primitives";
 
@@ -30,6 +30,9 @@ interface Layer {
 export function Sign({ director, text }: { director: Director; text: string }) {
   const root = useRef<THREE.Group>(null);
   const boardGeo = useSlabGeometry({ length: BOARD.width, width: BOARD.height, radius: 0.05, thickness: BOARD.depth, bevel: 0.006 });
+  // A thin border card behind the board (visible in the light theme).
+  const borderGeo = useSlabGeometry({ length: BOARD.width + 0.014, width: BOARD.height + 0.014, radius: 0.057, thickness: BOARD.depth * 0.8 });
+  const borderMat = useOwnMaterial(MAT.sign);
   const nextId = useRef(1);
   const [layers, setLayers] = useState<Layer[]>(() => [{ id: 0, text, op: new SpringValue(1) }]);
 
@@ -56,6 +59,7 @@ export function Sign({ director, text }: { director: Director; text: string }) {
     g.position.set(-L / 2 + inset, dy, p.width.get() / 2 - inset);
     g.scale.setScalar(Math.max(1e-4, scale * size));
     g.visible = scale > 0.001;
+    director.theme.colour("signBorder", borderMat.color);
   });
 
   const boardY = BOARD.y;
@@ -64,18 +68,20 @@ export function Sign({ director, text }: { director: Director; text: string }) {
       <Rod radius={0.07} height={0.012} base={[0, 0, 0]} material={MAT.charcoalDark} />
       <Rod radius={0.009} height={boardY - BOARD.height / 2} base={[0, 0, 0]} material={MAT.charcoalDark} />
       <group position={[0, boardY, -BOARD.depth / 2]}>
+        <mesh geometry={borderGeo} material={borderMat} rotation-x={Math.PI / 2} position-z={-0.002} />
         <mesh geometry={boardGeo} material={MAT.sign} rotation-x={Math.PI / 2} />
         {layers.map((l) => (
-          <SignText key={l.id} layer={l} />
+          <SignText key={l.id} layer={l} director={director} />
         ))}
       </group>
     </group>
   );
 }
 
-type TroikaText = THREE.Mesh & { fillOpacity: number };
+type TroikaText = THREE.Mesh & { fillOpacity: number; color: number };
+const textColour = new THREE.Color();
 
-function SignText({ layer }: { layer: Layer }) {
+function SignText({ layer, director }: { layer: Layer; director: Director }) {
   const ref = useRef<TroikaText>(null);
   const offset = useMemo(() => new THREE.Vector3(0, 0, BOARD.depth + 0.002), []);
   useFrame(() => {
@@ -84,6 +90,8 @@ function SignText({ layer }: { layer: Layer }) {
     const o = layer.op.get();
     t.fillOpacity = o;
     t.visible = o > 0.005;
+    const hex = director.theme.colour("signText", textColour).getHex();
+    if (t.color !== hex) t.color = hex;
   });
   return (
     <Text

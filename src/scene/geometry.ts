@@ -106,8 +106,8 @@ export function useLiveSlab(step?: number) {
 }
 
 /** Clone a shared material for one item (so it can fade on its own). */
-export function useOwnMaterial(source: THREE.Material) {
-  const m = useMemo(() => source.clone(), [source]);
+export function useOwnMaterial<T extends THREE.Material>(source: T): T {
+  const m = useMemo(() => source.clone() as T, [source]);
   useEffect(() => () => m.dispose(), [m]);
   return m;
 }

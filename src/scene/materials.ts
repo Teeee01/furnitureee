@@ -1,15 +1,21 @@
 import * as THREE from "three";
+import { THEMES } from "../theme";
 
-/** Scene palette. Everything is charcoal except the tabletop / fabric, the
- *  plant and the person's top. */
+const D = THEMES.dark.scene;
+
+/** Scene palette. Themed colours start from the dark theme and follow the
+ *  theme springs every frame (see Room's useThemeMaterials); the plant, the
+ *  person and the fabrics are the same in both themes. */
 export const PALETTE = {
-  platformTop: "#222228",
-  platformSide: "#18181C",
-  charcoal: "#2F2F36",
-  charcoalDark: "#222228",
-  charcoalLight: "#34343B",
-  metal: "#3A3A42",
-  wood: "#2F2A27",
+  platformTop: D.platformTop,
+  platformSide: D.platformSide,
+  charcoal: D.charcoal,
+  charcoalDark: D.charcoalDark,
+  charcoalLight: D.charcoalLight,
+  metal: D.metal,
+  wood: D.wood,
+  sign: D.sign,
+  rug: D.rug,
   plant: "#2FBF55",
   plantDark: "#23974A",
   skin: "#C99A78",
@@ -17,8 +23,6 @@ export const PALETTE = {
   sweater: "#3E70EA",
   trousers: "#24262E",
   shoes: "#151518",
-  sign: "#0B0B0D",
-  rug: "#B4B4BA",
 } as const;
 
 const std = (color: string, roughness = 0.75, metalness = 0, flatShading = false) =>
@@ -42,5 +46,6 @@ export const MAT = {
   sweater: std(PALETTE.sweater, 0.85, 0, true),
   trousers: std(PALETTE.trousers, 0.85, 0, true),
   shoes: std(PALETTE.shoes, 0.6, 0, true),
-  sign: std(PALETTE.sign, 0.5),
+  // Unlit, so the card reads as its true colour (black / white) in any light.
+  sign: new THREE.MeshBasicMaterial({ color: PALETTE.sign }),
 };

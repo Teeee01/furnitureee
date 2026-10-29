@@ -3,15 +3,32 @@
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --breakpoint-desk: 900px;
+}
 
-  --color-bg: #0e0e10;
-  --color-input: #16161a;
-  --color-btn: #18181b;
-  --color-line: #26262b;
-  --color-fg: #f2f2f3;
-  --color-muted: #8a8a93;
-  --color-accent: #4f63f6;
-  --color-success: #3dd68c;
+/* Colours come from src/theme.ts: vite.config.ts writes them into
+   index.html as --bg, --fg, … for [data-theme="dark" | "light"]. */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-input: var(--input);
+  --color-btn: var(--btn);
+  --color-line: var(--line);
+  --color-line-hover: var(--line-hover);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-success: var(--success);
+  --color-dot: var(--dot);
+}
+
+/* Theme switch: every UI colour tweens for 400 ms (the class is on <html>
+   only while switching, so it never slows other transitions). */
+html.theme-switching,
+html.theme-switching *,
+html.theme-switching *::before,
+html.theme-switching *::after {
+  transition-property: color, background-color, border-color, box-shadow, fill, stroke !important;
+  transition-duration: 400ms !important;
+  transition-timing-function: cubic-bezier(0.45, 0, 0.25, 1) !important;
 }
 
 html,
@@ -44,16 +61,18 @@ body,
     color: var(--color-muted);
     transition:
       border-color 150ms ease,
+      background-color 150ms ease,
       box-shadow 150ms ease,
       color 150ms ease;
   }
   .seg-btn:hover {
-    border-color: #3a3a41;
+    border-color: var(--line-hover);
     color: var(--color-fg);
   }
   .seg-btn[data-active] {
-    border-color: rgb(79 99 246 / 0.6);
-    box-shadow: inset 0 0 12px rgb(79 99 246 / 0.16);
+    border-color: var(--active-border);
+    background-color: var(--active-fill);
+    box-shadow: var(--active-glow);
     color: var(--color-fg);
   }
 
@@ -84,7 +103,7 @@ body,
   .swatch:hover .swatch-dot {
     box-shadow:
       0 0 0 2px var(--color-bg),
-      0 0 0 3px #3a3a41;
+      0 0 0 3px var(--line-hover);
   }
   .swatch-active .swatch-dot,
   .swatch-active:hover .swatch-dot {
@@ -103,12 +122,12 @@ body,
   .btn-primary {
     border-radius: 8px;
     background: var(--color-accent);
-    color: #fff;
+    color: var(--on-accent);
     font-weight: 500;
     transition: background-color 150ms ease;
   }
   .btn-primary:hover {
-    background: #6173f7;
+    background: var(--accent-hover);
   }
   .btn-secondary {
     border-radius: 8px;
@@ -119,7 +138,7 @@ body,
   }
   .btn-secondary:hover,
   .btn-pill:hover {
-    border-color: #3a3a41;
+    border-color: var(--line-hover);
   }
   .btn-pill {
     border-radius: 9999px;

@@ -11,6 +11,8 @@ import {
   type TableSpec,
 } from "../../data/furniture";
 import { POSES } from "../props/poses";
+import { SceneTheme } from "../sceneTheme";
+import { THEMES, type ThemeName } from "../../theme";
 import { isoX, isoY, PLANT_INSET, PLANT_TOP, SIGN_BOARD, signInset, signScale } from "../layout";
 import { SEAT_HEIGHT } from "../../data/furniture";
 import { ENTER_RAW_OVERSHOOT, MOVE, SPRING, stagger, T, TWEEN } from "./config";
@@ -386,6 +388,10 @@ export class Director {
   props = { plant: presence(true), sign: presence(true) };
   person: PersonAnim;
   tabletop: ColourAnim = { r: sv(1), g: sv(1), b: sv(1) };
+  /** Living-room tables (white in both themes, tuned per theme). */
+  neutralTop: ColourAnim = { r: sv(1), g: sv(1), b: sv(1) };
+  /** Scene colours, lights and shadows of the current theme (springs). */
+  theme: SceneTheme;
   fabric: ColourAnim = { r: sv(0.3), g: sv(0.3), b: sv(0.3) };
   style: CouchStyle = "modern";
   /** prefers-reduced-motion: every change is one 200 ms crossfade. */
@@ -404,8 +410,9 @@ export class Director {
   private version = 0;
   private listeners = new Set<() => void>();
 
-  constructor(target: Target, style: CouchStyle, tabletop: number[], fabric: number[]) {
+  constructor(target: Target, style: CouchStyle, tabletop: number[], fabric: number[], theme: ThemeName) {
     this.style = style;
+    this.theme = new SceneTheme(theme);
     const p = target.person;
     const pose = POSES[p.pose];
     this.person = {
@@ -422,6 +429,7 @@ export class Director {
     };
     setColour(this.tabletop, tabletop);
     setColour(this.fabric, fabric);
+    setColour(this.neutralTop, hexToRgb(THEMES[theme].scene.matteWhite));
     this.applyLayout(target, "init");
     this.hideAll();
   }
@@ -581,10 +589,16 @@ export class Director {
   }
 
   /** Finish swatch: colour tweens, nothing else moves. */
-  setColours(tabletop: number[], fabric: number[]) {
-    const config = this.reduced ? TWEEN.reduced : TWEEN.colour;
+  setColours(tabletop: number[], fabric: number[], neutralTop: number[]) {
+    const config = TWEEN.colour;
     setColour(this.tabletop, tabletop, config);
     setColour(this.fabric, fabric, config);
+    setColour(this.neutralTop, neutralTop, config);
+  }
+
+  /** Theme switch: colours, lights and shadows tween (400 ms); nothing moves. */
+  setTheme(name: ThemeName) {
+    if (name !== this.theme.name) this.theme.set(name);
   }
 
   /** Style: every couch / armchair puffs and morphs, 30 ms apart. */

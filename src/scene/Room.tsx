@@ -3,13 +3,13 @@ import { ContactShadows } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import * as THREE from "three";
-import { DEFAULT_TABLETOP } from "../data/furniture";
 import { SPRING } from "./anim/config";
 import type { Director, Item } from "./anim/director";
 import { useItems } from "./anim/useDirector";
 import { CameraRig } from "./CameraRig";
 import { DEG } from "./geometry";
 import { PLANT_INSET } from "./layout";
+import { MAT } from "./materials";
 import { Platform } from "./Platform";
 import { Seat } from "./furniture/Chairs";
 import { Couch } from "./furniture/Couch";
@@ -33,6 +33,8 @@ const TILT = 2;
 export function Room({ director, name, idle }: { director: Director; name: string; idle: boolean }) {
   const items = useItems();
   const busy = useBusy(director);
+  const contact = useRef<THREE.Group>(null);
+  useThemeMaterials(director, contact);
   const three = useThree();
   useEffect(() => {
     // Dev only: the three.js state, for the framing / layout audit.
@@ -56,13 +58,14 @@ export function Room({ director, name, idle }: { director: Director; name: strin
         {/* Re-rendered every frame only while something moves. */}
         {/* userData.noFrame: left out of the dev framing audit */}
         <ContactShadows
+          ref={contact}
           userData={{ noFrame: true }}
           position-y={0.003}
           scale={9}
           resolution={768}
           far={1.4}
           blur={2.4}
-          opacity={0.6}
+          opacity={1}
           color="#000000"
           frames={busy ? Infinity : 1}
         />
@@ -76,6 +79,27 @@ export function Room({ director, name, idle }: { director: Director; name: strin
       </Tilt>
     </>
   );
+}
+
+/**
+ * Shared materials (platform, charcoal pieces, sign, lamp shade) and the
+ * contact-shadow strength follow the theme springs every frame.
+ */
+function useThemeMaterials(director: Director, contact: React.RefObject<THREE.Group | null>) {
+  useFrame(() => {
+    const t = director.theme;
+    t.colour("platformTop", MAT.platformTop.color);
+    t.colour("platformSide", MAT.platformSide.color);
+    t.colour("charcoal", MAT.charcoal.color);
+    t.colour("charcoalDark", MAT.charcoalDark.color);
+    t.colour("charcoalLight", MAT.charcoalLight.color);
+    t.colour("metal", MAT.metal.color);
+    t.colour("wood", MAT.wood.color);
+    t.colour("sign", MAT.sign.color);
+    t.colour("charcoalLight", shadeMat.color);
+    const plane = contact.current?.children.find((c): c is THREE.Mesh => (c as THREE.Mesh).isMesh);
+    if (plane) (plane.material as THREE.MeshBasicMaterial).opacity = t.number("contactShadow");
+  });
 }
 
 /**
@@ -99,7 +123,7 @@ function useBusy(director: Director) {
 function ItemView({ item, director }: { item: Item; director: Director }) {
   switch (item.type) {
     case "table":
-      return <Table item={item} colour={director.tabletop} fixedColour={item.extra ? DEFAULT_TABLETOP : undefined} />;
+      return <Table item={item} colour={item.extra ? director.neutralTop : director.tabletop} theme={director.theme} />;
     case "seat":
       return <Seat item={item} />;
     case "couch":
@@ -117,7 +141,7 @@ function ItemView({ item, director }: { item: Item; director: Director }) {
         </PresenceGroup>
       );
     case "rug":
-      return <Rug item={item} />;
+      return <Rug item={item} theme={director.theme} />;
   }
 }
 

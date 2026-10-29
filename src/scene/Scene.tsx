@@ -1,10 +1,12 @@
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { Suspense, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import type { Category, CouchStyle, SizeOption } from "../data/furniture";
 import { buildTarget, Director, hexToRgb } from "./anim/director";
 import { DirectorContext } from "./anim/useDirector";
 import { Room } from "./Room";
+import { themedTabletop } from "./sceneTheme";
+import { THEMES, type ThemeName } from "../theme";
 
 export interface SceneProps {
   category: Category;
@@ -14,6 +16,7 @@ export interface SceneProps {
   tabletop: string;
   fabric: string;
   reduced: boolean;
+  theme: ThemeName;
 }
 
 /**
@@ -23,10 +26,17 @@ export interface SceneProps {
  * into springs.
  */
 export function Scene(props: SceneProps) {
-  const { category, slot, size, style, tabletop, fabric, reduced } = props;
+  const { category, slot, size, style, tabletop, fabric, reduced, theme } = props;
   const wrap = useRef<HTMLDivElement>(null);
   const [director] = useState(
-    () => new Director(buildTarget(category, size), style, hexToRgb(tabletop), hexToRgb(fabric)),
+    () =>
+      new Director(
+        buildTarget(category, size),
+        style,
+        hexToRgb(themedTabletop(tabletop, theme)),
+        hexToRgb(fabric),
+        theme,
+      ),
   );
 
   // Dev only: inspect the springs from the console (window.__forma).
@@ -49,8 +59,15 @@ export function Scene(props: SceneProps) {
   const lastTop = useRef(tabletop);
   useEffect(() => {
     if (category.finishTarget === "tabletop") lastTop.current = tabletop;
-    director.setColours(hexToRgb(lastTop.current), hexToRgb(fabric));
-  }, [director, tabletop, fabric, category.finishTarget]);
+    director.setColours(
+      hexToRgb(themedTabletop(lastTop.current, theme)),
+      hexToRgb(fabric),
+      hexToRgb(THEMES[theme].scene.matteWhite),
+    );
+  }, [director, tabletop, fabric, category.finishTarget, theme]);
+
+  // Theme: scene colours, lights and shadows tween; nothing moves.
+  useEffect(() => director.setTheme(theme), [director, theme]);
 
   useEffect(() => {
     director.setReduced(reduced);
@@ -76,7 +93,7 @@ export function Scene(props: SceneProps) {
           gl={{ antialias: true, alpha: true }}
           aria-hidden="true"
         >
-          <Lights />
+          <Lights director={director} />
           <Suspense fallback={null}>
             <DirectorContext.Provider value={director}>
               <Room director={director} name={size.name} idle={!reduced} />
@@ -87,15 +104,33 @@ export function Scene(props: SceneProps) {
   );
 }
 
-function Lights() {
+/** Lights and shadow strengths follow the theme springs (400 ms tween). */
+function Lights({ director }: { director: Director }) {
+  const ambient = useRef<THREE.AmbientLight>(null);
+  const hemi = useRef<THREE.HemisphereLight>(null);
+  const key = useRef<THREE.DirectionalLight>(null);
+  const rim = useRef<THREE.DirectionalLight>(null);
+  useFrame(() => {
+    const t = director.theme;
+    if (ambient.current) ambient.current.intensity = t.number("ambient");
+    if (hemi.current) {
+      hemi.current.intensity = t.number("hemisphere");
+      t.colour("platformSide", hemi.current.groundColor);
+    }
+    if (key.current) {
+      key.current.intensity = t.number("key");
+      key.current.shadow.intensity = t.number("shadow");
+    }
+    if (rim.current) rim.current.intensity = t.number("rim");
+  });
   return (
     <>
-      <ambientLight intensity={0.32} color="#C9CCD6" />
-      <hemisphereLight intensity={0.35} color="#E6E3DC" groundColor="#0E0E10" />
+      <ambientLight ref={ambient} color="#C9CCD6" />
+      <hemisphereLight ref={hemi} color="#E6E3DC" />
       {/* Warm-white key from the top-left-back */}
       <directionalLight
+        ref={key}
         position={[-4.5, 9, -3]}
-        intensity={3}
         color="#FFF1DD"
         castShadow
         shadow-mapSize={[2048, 2048]}
@@ -110,7 +145,7 @@ function Lights() {
         shadow-radius={6}
       />
       {/* Faint cool rim from the front-right so dark pieces keep their edges */}
-      <directionalLight position={[6, 3, 5]} intensity={0.35} color="#B9C2DA" />
+      <directionalLight ref={rim} position={[6, 3, 5]} color="#B9C2DA" />
     </>
   );
 }

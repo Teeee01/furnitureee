@@ -2,6 +2,7 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { RugItem } from "../anim/director";
+import type { SceneTheme } from "../sceneTheme";
 import { setOpacity, useLiveSlab } from "../geometry";
 import { PALETTE } from "../materials";
 
@@ -38,7 +39,7 @@ rollGeo.rotateX(Math.PI / 2);
 /** The rug UNROLLS along its length (and rolls back up): the flat part grows
  *  from its left end while a roll travels along the leading edge. Size and
  *  position glide with the morph spring. */
-export function Rug({ item }: { item: RugItem }) {
+export function Rug({ item, theme }: { item: RugItem; theme: SceneTheme }) {
   const flat = useRef<THREE.Mesh>(null);
   const roll = useRef<THREE.Mesh>(null);
   const slab = useLiveSlab(0.002);
@@ -79,6 +80,7 @@ export function Rug({ item }: { item: RugItem }) {
     r.position.set(left + L * u + radius * 0.6, radius, a.z.get());
     r.scale.set(radius, radius, W * 0.985 * appear);
     setOpacity(material, a.op.get());
+    theme.colour("rug", material.color);
   });
 
   return (

@@ -1,8 +1,9 @@
 import { useFrame } from "@react-three/fiber";
-import { useImperativeHandle, useMemo, useRef } from "react";
+import { useEffect, useImperativeHandle, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { TableBase as TableBaseKind } from "../../data/furniture";
 import type { ColourAnim, TableItem } from "../anim/director";
+import type { SceneTheme } from "../sceneTheme";
 import { presenceOf } from "../anim/useDirector";
 import { DEG, setOpacity, useLiveSlab, useOwnMaterial } from "../geometry";
 import { MAT } from "../materials";
@@ -13,11 +14,22 @@ import { MAT } from "../materials";
  * those move, so round → pill → long pill is a stretch, never a swap. The
  * pedestal / legs / cabinet follow the same numbers.
  */
-export function Table({ item, colour, fixedColour }: { item: TableItem; colour: ColourAnim; fixedColour?: string }) {
+export function Table({ item, colour, theme }: { item: TableItem; colour: ColourAnim; theme: SceneTheme }) {
   const group = useRef<THREE.Group>(null);
   const top = useRef<THREE.Mesh>(null);
   const topSlab = useLiveSlab();
   const topMat = useMemo(() => new THREE.MeshStandardMaterial({ roughness: 0.55 }), []);
+  // The edge is a shade darker than the top (more so in the light theme, so
+  // a white top doesn't disappear into a light platform).
+  const edgeMat = useMemo(() => new THREE.MeshStandardMaterial({ roughness: 0.55 }), []);
+  const topMats = useMemo(() => [topMat, edgeMat], [topMat, edgeMat]);
+  useEffect(
+    () => () => {
+      topMat.dispose();
+      edgeMat.dispose();
+    },
+    [topMat, edgeMat],
+  );
   const baseMat = useOwnMaterial(MAT.charcoalDark);
   const bodyMat = useOwnMaterial(MAT.charcoal);
   const base = useRef<BaseHandle>(null);
@@ -44,11 +56,15 @@ export function Table({ item, colour, fixedColour }: { item: TableItem; colour: 
       t.geometry = topSlab.geometry!;
     }
     t.position.y = height - thickness;
-    if (fixedColour) topMat.color.set(fixedColour);
-    else topMat.color.setRGB(colour.r.get(), colour.g.get(), colour.b.get(), THREE.SRGBColorSpace);
+    topMat.color.setRGB(colour.r.get(), colour.g.get(), colour.b.get(), THREE.SRGBColorSpace);
+    edgeMat.color.copy(topMat.color).multiplyScalar(theme.number("tableEdge"));
+    // Bases follow the theme's charcoal / warm grey.
+    baseMat.color.copy(MAT.charcoalDark.color);
+    bodyMat.color.copy(MAT.charcoal.color);
 
     const op = a.op.get();
     setOpacity(topMat, op);
+    setOpacity(edgeMat, op);
     setOpacity(baseMat, op);
     setOpacity(bodyMat, op);
     base.current?.update(length, width, radius, height - thickness);
@@ -56,7 +72,7 @@ export function Table({ item, colour, fixedColour }: { item: TableItem; colour: 
 
   return (
     <group ref={group} name={item.key}>
-      <mesh ref={top} material={topMat} castShadow receiveShadow />
+      <mesh ref={top} material={topMats} castShadow receiveShadow />
       <TableBase ref={base} kind={item.spec.base} material={baseMat} body={bodyMat} />
     </group>
   );

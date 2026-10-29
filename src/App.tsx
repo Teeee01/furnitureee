@@ -2,6 +2,7 @@ import { MotionConfig, useReducedMotion } from "framer-motion";
 import { lazy, Suspense } from "react";
 import { CrossfadeText } from "./ui/CrossfadeText";
 import { useConfigurator } from "./state/useConfigurator";
+import { useTheme } from "./state/useTheme";
 import { Panel } from "./ui/Panel";
 
 // three.js loads in its own chunk so the panel paints first.
@@ -9,12 +10,13 @@ const Scene = lazy(() => import("./scene/Scene").then((m) => ({ default: m.Scene
 
 export default function App() {
   const c = useConfigurator();
+  const { theme, toggle } = useTheme();
   const reduced = useReducedMotion() ?? false;
   return (
     <MotionConfig reducedMotion="user">
     <div className="flex min-h-svh flex-col bg-bg text-fg desk:grid desk:h-svh desk:grid-cols-[38%_62%] desk:overflow-hidden">
       <main className="px-6 py-8 sm:px-10 desk:h-svh desk:overflow-y-auto desk:px-[72px] desk:py-[72px]">
-        <Panel c={c} />
+        <Panel c={c} theme={theme} onToggleTheme={toggle} />
       </main>
 
       <section aria-label="Room preview" className="relative order-first h-[55vh] desk:order-none desk:h-svh">
@@ -28,6 +30,7 @@ export default function App() {
               tabletop={c.tabletop}
               fabric={c.fabric}
               reduced={reduced}
+              theme={theme}
             />
           </Suspense>
         </div>

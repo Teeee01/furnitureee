@@ -74,12 +74,13 @@ const e = new THREE.Euler();
 export function mergeParts(parts: Part[]): MergedMesh[] {
   const byMat = new Map<THREE.Material, THREE.BufferGeometry[]>();
   for (const p of parts) {
-    const g = p.geo.clone();
-    // Keep only the attributes every primitive has, so they merge.
+    // Non-indexed copies (RoundedBoxGeometry has no index; the rest do), with
+    // only the attributes every primitive has, so they all merge.
+    const src = p.geo.index ? p.geo.toNonIndexed() : p.geo.clone();
+    const g = src;
     for (const name of Object.keys(g.attributes)) {
       if (name !== "position" && name !== "normal" && name !== "uv") g.deleteAttribute(name);
     }
-    if (!g.index) continue;
     q.setFromEuler(e.set(...(p.rotation ?? [0, 0, 0])));
     m.compose(new THREE.Vector3(...p.position), q, new THREE.Vector3(...(p.scale ?? [1, 1, 1])));
     g.applyMatrix4(m);

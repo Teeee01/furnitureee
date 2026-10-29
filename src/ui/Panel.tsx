@@ -2,7 +2,9 @@ import { AnimatePresence, motion } from "framer-motion";
 import { COUCH_STYLES, CATEGORIES, type CategoryId, type CouchStyle } from "../data/furniture";
 import type { Configurator } from "../state/useConfigurator";
 import { CrossfadeText } from "./CrossfadeText";
+import type { ThemeName } from "../theme";
 import { Logo } from "./Logo";
+import { ThemeToggle } from "./ThemeToggle";
 import { PriceRoll } from "./PriceRoll";
 import { SegmentedGroup } from "./RadioGroup";
 import { StepIndicator } from "./StepIndicator";
@@ -12,15 +14,18 @@ const SUBTEXT = "Pick a size and watch the room change. You can change it anytim
 const HELPER = "Pick a size and watch the room change.";
 
 /** The configurator panel (left column on desktop, below the scene on mobile). */
-export function Panel({ c }: { c: Configurator }) {
+export function Panel({ c, theme, onToggleTheme }: { c: Configurator; theme: ThemeName; onToggleTheme: () => void }) {
   const { category, size } = c;
   return (
     <div className="flex min-h-full flex-col">
       <header className="flex items-center justify-between">
         <Logo />
-        <a href="#save" className="-my-2 py-3 text-[12px] text-muted transition-colors hover:text-fg">
-          Save &amp; finish later
-        </a>
+        <div className="flex items-center gap-3">
+          <a href="#save" className="-my-2 py-3 text-[12px] text-muted transition-colors hover:text-fg">
+            Save &amp; finish later
+          </a>
+          <ThemeToggle theme={theme} onToggle={onToggleTheme} />
+        </div>
       </header>
 
       <div className="mt-10 flex flex-1 flex-col justify-center desk:mt-12">

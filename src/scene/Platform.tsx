@@ -44,7 +44,9 @@ export function Platform({ director }: { director: Director }) {
     group.current?.scale.setScalar(director.platform.s.get());
     setOpacity(MAT.platformTop, op);
     setOpacity(MAT.platformSide, op);
-    shadowMat.opacity = op;
+    // Soft shadow under the platform: colour and strength from the theme.
+    director.theme.colour("floorShadow", shadowMat.color);
+    shadowMat.opacity = op * director.theme.number("floorShadowOpacity");
   });
 
   return (
@@ -64,9 +66,10 @@ function getShadowTexture() {
   canvas.width = canvas.height = size;
   const ctx = canvas.getContext("2d")!;
   const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-  g.addColorStop(0, "rgba(0,0,0,0.75)");
-  g.addColorStop(0.45, "rgba(0,0,0,0.45)");
-  g.addColorStop(1, "rgba(0,0,0,0)");
+  // White alpha ramp; the material colour tints it (black / warm brown).
+  g.addColorStop(0, "rgba(255,255,255,1)");
+  g.addColorStop(0.45, "rgba(255,255,255,0.6)");
+  g.addColorStop(1, "rgba(255,255,255,0)");
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, size, size);
   shadowTexture = new THREE.CanvasTexture(canvas);

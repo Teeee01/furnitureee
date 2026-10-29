@@ -17,9 +17,25 @@ Stack: React 19 + TypeScript + Vite, Tailwind CSS 4, three.js via
 @react-three/fiber + drei, @react-spring/three for every 3D motion,
 framer-motion for the 2D UI.
 
+## Themes
+
+Dark and light. Every colour of both — UI and 3D scene — is in
+`src/theme.ts`. `vite.config.ts` writes the UI tokens into `index.html` as
+CSS variables with a tiny boot script, so the first paint already uses the
+visitor's stored choice (`localStorage`, key `forma-theme`) or their system
+setting. The scene reads the same object through springs
+(`src/scene/sceneTheme.ts`): materials, lights and shadow strengths tween
+over 400 ms on a switch, independently of any furniture animation.
+
+## Deploy (Vercel)
+
+Framework preset **Vite**, build command `npm run build`, output directory
+`dist`, install command `npm install` (default). Node ≥ 20.19.
+
 ## Where things live
 
 ```
+src/theme.ts               ALL colours (UI + scene) for the dark and light themes
 src/data/furniture.ts      ALL product data: categories, sizes, names, prices,
                            captions, dimensions, table specs, seat positions,
                            couch modules, rug / lamp / laptop placement
