@@ -1,0 +1,136 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --breakpoint-desk: 900px;
+
+  --color-bg: #0e0e10;
+  --color-input: #16161a;
+  --color-btn: #18181b;
+  --color-line: #26262b;
+  --color-fg: #f2f2f3;
+  --color-muted: #8a8a93;
+  --color-accent: #4f63f6;
+  --color-success: #3dd68c;
+}
+
+html,
+body,
+#root {
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer components {
+  .label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+
+  /* Category / style / size buttons. Active state fades in (150 ms). */
+  .seg-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    border-radius: 8px;
+    border: 1px solid var(--color-line);
+    background: var(--color-btn);
+    color: var(--color-muted);
+    transition:
+      border-color 150ms ease,
+      box-shadow 150ms ease,
+      color 150ms ease;
+  }
+  .seg-btn:hover {
+    border-color: #3a3a41;
+    color: var(--color-fg);
+  }
+  .seg-btn[data-active] {
+    border-color: rgb(79 99 246 / 0.6);
+    box-shadow: inset 0 0 12px rgb(79 99 246 / 0.16);
+    color: var(--color-fg);
+  }
+
+  /* 40 px tap target on touch, 28 px on desktop; the dot is 16 px with a
+     ring that shows the active finish. */
+  .swatch {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 9999px;
+  }
+  @media (min-width: 900px) {
+    .swatch {
+      width: 28px;
+      height: 28px;
+    }
+  }
+  .swatch-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 9999px;
+    box-shadow:
+      0 0 0 2px var(--color-bg),
+      0 0 0 3px transparent;
+    transition: box-shadow 150ms ease;
+  }
+  .swatch:hover .swatch-dot {
+    box-shadow:
+      0 0 0 2px var(--color-bg),
+      0 0 0 3px #3a3a41;
+  }
+  .swatch-active .swatch-dot,
+  .swatch-active:hover .swatch-dot {
+    box-shadow:
+      0 0 0 2px var(--color-bg),
+      0 0 0 3px var(--color-fg);
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .btn-primary {
+    border-radius: 8px;
+    background: var(--color-accent);
+    color: #fff;
+    font-weight: 500;
+    transition: background-color 150ms ease;
+  }
+  .btn-primary:hover {
+    background: #6173f7;
+  }
+  .btn-secondary {
+    border-radius: 8px;
+    border: 1px solid var(--color-line);
+    background: var(--color-btn);
+    color: var(--color-fg);
+    transition: border-color 150ms ease;
+  }
+  .btn-secondary:hover,
+  .btn-pill:hover {
+    border-color: #3a3a41;
+  }
+  .btn-pill {
+    border-radius: 9999px;
+    border: 1px solid var(--color-line);
+    background: var(--color-btn);
+    color: var(--color-fg);
+    transition: border-color 150ms ease;
+  }
+
+  :where(button, a, input):focus-visible {
+    outline: 2px solid var(--color-fg);
+    outline-offset: 2px;
+  }
+}
